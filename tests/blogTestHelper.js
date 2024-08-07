@@ -1,5 +1,8 @@
 require("mongoose")
 const Blog = require("../models/blog")
+const User = require("../models/user")
+const jwt = require("jsonwebtoken")
+const bcrypt = require("bcrypt")
 
 const blogs = [
     {
@@ -53,13 +56,44 @@ const blogs = [
 ]
 
 const allBlogs = async ()=>{
-    for(let blog of blogs){
-        let newBlog = new Blog(blog)
-        await newBlog.save()
-    }
+  for(let blog of blogs){
+      let newBlog = new Blog(blog)
+      newBlog.user = getUser()._id
+      await newBlog.save()
+  }
+}
+
+const createUser = async () =>{
+  let passwordHash = await bcrypt.hash("1234", 10)
+  let userData = {
+    name:"Yousef",
+    username:"Yousef",
+    passwordHash
+  }
+
+  let user = new User(userData)
+  await user.save()
+}
+
+const getUser = async () =>{
+  let user = await User.findOne()
+  return user
+}
+
+const getToken = async () =>{
+  let user = await getUser()
+  const userForToken = {
+    username: user.username,
+    id: user._id,
+  }
+  const token = jwt.sign(userForToken, process.env.SECRET)
+  return "Bearer "+token.toString()
 }
 
 module.exports = {
     allBlogs,
-    blogs
+    blogs,
+    createUser,
+    getUser,
+    getToken
 }
